@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <!-- Fondo verde redondeado -->
+  <rect width="512" height="512" rx="110" fill="#2e7d32"/>
+  
+  <!-- Anillo/Indicador de maduración -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="#fff8e1" stroke-width="24" opacity="0.3"/>
+  <path d="M 256 76 A 180 180 0 1 1 76 256" fill="none" stroke="#f57f17" stroke-width="24" stroke-linecap="round"/>
+  
+  <!-- Naranja -->
+  <circle cx="256" cy="260" r="120" fill="#ff9800"/>
+  <circle cx="256" cy="260" r="105" fill="#ffa726"/>
+  
+  <!-- Detalle / Hojas -->
+  <path d="M 256 140 Q 230 110 256 90 Q 282 110 256 140 Z" fill="#2e7d32"/>
+  <path d="M 256 125 Q 285 110 300 120 Q 285 135 256 125 Z" fill="#4caf50"/>
+  
+  <!-- Brillo -->
+  <path d="M 180 200 A 90 90 0 0 1 256 165" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" opacity="0.5"/>
+</svg>

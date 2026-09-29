@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Maduración - Frutería y Verdulería</title>
+
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2e7d32">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Maduración">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1625/1625048.png">
+
+  <style>
+    :root {
+      --verde-bg: #e8f5e9;
+      --verde-color: #2e7d32;
+      --listo-bg: #fff8e1;
+      --listo-color: #f57f17;
+      --oferta-bg: #ffebee;
+      --oferta-color: #c62828;
+      --primary: #2e7d32;
+      --gray-bg: #f4f6f8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: var(--gray-bg); color: #333; padding: 20px; }
+    .container { max-width: 1100px; margin: 0 auto; }
+
+    header { text-align: center; margin-bottom: 20px; }
+    header h1 { color: var(--primary); font-size: 1.8rem; margin-bottom: 5px; }
+
+    .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .card { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; }
+    .card h3 { font-size: 0.9rem; color: #666; margin-bottom: 5px; }
+    .card .number { font-size: 1.5rem; font-weight: bold; }
+
+    .actions { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 25px; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 15px; }
+    input, select, button { padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.95rem; width: 100%; }
+    button.btn-add { background: var(--primary); color: #fff; border: none; font-weight: bold; cursor: pointer; grid-column: span 1; }
+    button.btn-add:hover { background: #1b5e20; }
+
+    .controls { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 15px; }
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter-btn { background: #e0e0e0; border: none; padding: 8px 12px; cursor: pointer; border-radius: 20px; font-size: 0.85rem; }
+    .filter-btn.active { background: var(--primary); color: #fff; }
+
+    .table-container { background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem; }
+    th, td { padding: 12px 15px; border-bottom: 1px solid #eee; }
+    th { background-color: #fafafa; color: #555; }
+
+    .badge { padding: 5px 10px; border-radius: 12px; font-weight: bold; font-size: 0.8rem; display: inline-block; }
+    .badge-verde { background: var(--verde-bg); color: var(--verde-color); }
+    .badge-listo { background: var(--listo-bg); color: var(--listo-color); }
+    .badge-oferta { background: var(--oferta-bg); color: var(--oferta-color); }
+
+    .btn-action { padding: 5px 8px; margin: 2px; font-size: 0.8rem; border: none; border-radius: 4px; cursor: pointer; }
+    .btn-edit { background: #0288d1; color: white; }
+    .btn-delete { background: #d32f2f; color: white; }
+
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      button.btn-add { grid-column: span 1; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>🍊 Control de Maduración y Ofertas Rápidas</h1>
+    <p>Frutería y Verdulería</p>
+  </header>
+
+  <div class="dashboard">
+    <div class="card">
+      <h3>Total Inventario</h3>
+      <div class="number" id="metric-total-kg">0 kg</div>
+    </div>
+    <div class="card">
+      <h3>Lotes Verdes</h3>
+      <div class="number" id="metric-verde" style="color: var(--verde-color)">0</div>
+    </div>
+    <div class="card">
+      <h3>Listos para Consumir</h3>
+      <div class="number" id="metric-listo" style="color: var(--listo-color)">0</div>
+    </div>
+    <div class="card">
+      <h3>🚨 Oferta Rápida (Urgentes)</h3>
+      <div class="number" id="metric-oferta" style="color: var(--oferta-color)">0</div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <h3 style="margin-bottom: 10px; font-size: 1rem;">Registrar nuevo producto / lote</h3>
+    <form id="product-form" onsubmit="saveProduct(event)">
+      <input type="hidden" id="prod-id">
+      <div class="form-grid">
+        <input type="text" id="prod-name" placeholder="Ej. Plátano, Aguacate" required>
+        <input type="number" id="prod-qty" placeholder="Cantidad (kg)" step="0.1" min="0.1" required>
+        <select id="prod-status" required>
+          <option value="Verde">Verde (Recién llegado)</option>
+          <option value="Listo para consumir">Listo para consumir</option>
+          <option value="Oferta rápida">Oferta rápida (Liquidar)</option>
+        </select>
+        <input type="number" id="prod-days" placeholder="Días de vida útil" min="1" required>
+        <button type="submit" class="btn-add" id="btn-submit">Añadir Lote</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="controls">
+    <div class="filters">
+      <button class="filter-btn active" onclick="filterStatus('Todos', this)">Todos</button>
+      <button class="filter-btn" onclick="filterStatus('Verde', this)">Verde</button>
+      <button class="filter-btn" onclick="filterStatus('Listo para consumir', this)">Listo para consumir</button>
+      <button class="filter-btn" onclick="filterStatus('Oferta rápida', this)">🚨 Oferta rápida</button>
+    </div>
+    <input type="text" id="search-input" placeholder="Buscar por producto..." oninput="renderTable()" style="width: 200px;">
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Cantidad (kg)</th>
+          <th>Estado de Maduración</th>
+          <th>Días Restantes</th>
+          <th>Acción Sugerida</th>
+          <th>Opciones</th>
+        </tr>
+      </thead>
+      <tbody id="inventory-table">
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  let inventory = JSON.parse(localStorage.getItem('fruteria_inventory')) || [
+    { id: 1, name: 'Aguacate Hass', qty: 15, status: 'Listo para consumir', days: 2 },
+    { id: 2, name: 'Plátano Tabasco', qty: 25, status: 'Oferta rápida', days: 1 },
+    { id: 3, name: 'Jitomate Bola', qty: 30, status: 'Verde', days: 6 },
+    { id: 4, name: 'Papaya Maradol', qty: 8, status: 'Listo para consumir', days: 3 }
+  ];
+
+  let currentFilter = 'Todos';
+
+  function saveData() {
+    localStorage.setItem('fruteria_inventory', JSON.stringify(inventory));
+    renderTable();
+    updateDashboard();
+  }
+
+  function getAction(status) {
+    if (status === 'Verde') return 'Almacenar en zona fresca / separar de etileno';
+    if (status === 'Listo para consumir') return 'Exhibir al frente, precio estándar';
+    if (status === 'Oferta rápida') return '🚨 Descuento 30-50% / Paquete para jugos';
+    return '-';
+  }
+
+  function getBadgeClass(status) {
+    if (status === 'Verde') return 'badge-verde';
+    if (status === 'Listo para consumir') return 'badge-listo';
+    if (status === 'Oferta rápida') return 'badge-oferta';
+    return '';
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('inventory-table');
+    const search = document.getElementById('search-input').value.toLowerCase();
+    tbody.innerHTML = '';
+
+    const filtered = inventory.filter(item => {
+      const matchFilter = currentFilter === 'Todos' || item.status === currentFilter;
+      const matchSearch = item.name.toLowerCase().includes(search);
+      return matchFilter && matchSearch;
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#888;">No hay productos registrados en esta sección.</td></tr>`;
+      return;
+    }
+
+    filtered.forEach(item => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td><strong>${item.name}</strong></td>
+        <td>${item.qty} kg</td>
+        <td><span class="badge ${getBadgeClass(item.status)}">${item.status}</span></td>
+        <td>${item.days} ${item.days == 1 ? 'día' : 'días'}</td>
+        <td style="font-size:0.85rem;">${getAction(item.status)}</td>
+        <td>
+          <button class="btn-action btn-edit" onclick="editProduct(${item.id})">Editar</button>
+          <button class="btn-action btn-delete" onclick="deleteProduct(${item.id})">Eliminar</button>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  function updateDashboard() {
+    let totalKg = 0;
+    let countVerde = 0;
+    let countListo = 0;
+    let countOferta = 0;
+
+    inventory.forEach(item => {
+      totalKg += parseFloat(item.qty);
+      if (item.status === 'Verde') countVerde++;
+      if (item.status === 'Listo para consumir') countListo++;
+      if (item.status === 'Oferta rápida') countOferta++;
+    });
+
+    document.getElementById('metric-total-kg').textContent = `${totalKg.toFixed(1)} kg`;
+    document.getElementById('metric-verde').textContent = countVerde;
+    document.getElementById('metric-listo').textContent = countListo;
+    document.getElementById('metric-oferta').textContent = countOferta;
+  }
+
+  function saveProduct(e) {
+    e.preventDefault();
+    const id = document.getElementById('prod-id').value;
+    const name = document.getElementById('prod-name').value.trim();
+    const qty = parseFloat(document.getElementById('prod-qty').value);
+    const status = document.getElementById('prod-status').value;
+    const days = parseInt(document.getElementById('prod-days').value);
+
+    if (id) {
+      const index = inventory.findIndex(item => item.id == id);
+      if (index !== -1) {
+        inventory[index] = { id: parseInt(id), name, qty, status, days };
+      }
+    } else {
+      const newProduct = {
+        id: Date.now(),
+        name,
+        qty,
+        status,
+        days
+      };
+      inventory.push(newProduct);
+    }
+
+    resetForm();
+    saveData();
+  }
+
+  function editProduct(id) {
+    const item = inventory.find(prod => prod.id === id);
+    if (item) {
+      document.getElementById('prod-id').value = item.id;
+      document.getElementById('prod-name').value = item.name;
+      document.getElementById('prod-qty').value = item.qty;
+      document.getElementById('prod-status').value = item.status;
+      document.getElementById('prod-days').value = item.days;
+      document.getElementById('btn-submit').textContent = 'Guardar Cambios';
+    }
+  }
+
+  function deleteProduct(id) {
+    if (confirm('¿Deseas eliminar este lote del inventario?')) {
+      inventory = inventory.filter(item => item.id !== id);
+      saveData();
+    }
+  }
+
+  function resetForm() {
+    document.getElementById('product-form').reset();
+    document.getElementById('prod-id').value = '';
+    document.getElementById('btn-submit').textContent = 'Añadir Lote';
+  }
+
+  function filterStatus(status, btnElement) {
+    currentFilter = status;
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+    btnElement.classList.add('active');
+    renderTable();
+  }
+
+  saveData();
+
+  // Registro del Service Worker para PWA
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('Service Worker registrado correctamente', reg))
+        .catch(err => console.error('Error al registrar Service Worker', err));
+    });
+  }
+</script>
+
+</body>
+</html>
